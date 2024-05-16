@@ -16,23 +16,23 @@ ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), tasksSemaphore(0), 
 
     // initialize the dispatcher thread
     dt = thread([this]{dispatcher();});
-    cout << "Dispatcher thread created" << endl;
+    // cout << "Dispatcher thread created" << endl;
 
     // initialize the worker threads
     for(size_t i = 0; i < numThreads; i++)
     {
         wts[i] = thread([this, i]{worker(i);});
         workersSemaphore.signal(); // signal the worker thread that it is available
-        cout << "Worker " << i << " thread created" << endl;
+        // cout << "Worker " << i << " thread created" << endl;
     }
 }
 
 void ThreadPool::dispatcher() // extrae trabajo de la cola, asigna a un worker trabajo especifico y le entrega la funcion a ejecutar a ese trabajador
 {
-    cout << "Dispatcher waiting" << endl;
+    // cout << "Dispatcher waiting" << endl;
     while (!stop) {
         tasksSemaphore.wait();
-        cout << "There is a task" << endl; // si pasa el wait es porque hay una tarea
+        // cout << "There is a task" << endl; // si pasa el wait es porque hay una tarea
         function<void(void)> task;
         {
             unique_lock<std::mutex> lock(queueMutex); // lock the queue (adentro de un scope)
@@ -48,7 +48,7 @@ void ThreadPool::dispatcher() // extrae trabajo de la cola, asigna a un worker t
                 break;
             }
             if (!tasks.empty()) {
-                cout << "Dispatcher popped task" << endl;
+                // cout << "Dispatcher popped task" << endl;
                 task = move(tasks.front());
                 tasks.pop();
             }
@@ -62,13 +62,13 @@ void ThreadPool::dispatcher() // extrae trabajo de la cola, asigna a un worker t
                     workers[i].busy = true; // el worker esta ocupado
                     workers[i].cv.notify_one(); // notifico al worker que tiene una tarea
                     activeWorkers++;
-                    cout << "Task assigned to worker " << i << endl;
+                    // cout << "Task assigned to worker " << i << endl;
                     break;
                 }
             }
         }
     }
-    cout << "Dispatcher finishing" << endl;
+    // cout << "Dispatcher finishing" << endl;
     
 }
 
@@ -85,7 +85,7 @@ void ThreadPool::worker(size_t id) // ejecuta la funcion que le asigno el dispat
             task = move(workers[id].task);
         }
         if (task) {
-            cout << "Worker " << id << " got a task" << endl;
+            // cout << "Worker " << id << " got a task" << endl;
             workers[id].busy = true;
             task();
             {
@@ -93,9 +93,9 @@ void ThreadPool::worker(size_t id) // ejecuta la funcion que le asigno el dispat
                 workersSemaphore.signal();
                 workers[id].busy = false;
                 activeWorkers--;
-                cout << "Worker " << id << " finished task" << endl;
-                cout << "Active workers: " << activeWorkers << endl;
-                cout << "Tasks size: " << tasks.size() << endl;
+                // cout << "Worker " << id << " finished task" << endl;
+                // cout << "Active workers: " << activeWorkers << endl;
+                // cout << "Tasks size: " << tasks.size() << endl;
                 if (tasks.empty() && activeWorkers == 0) {
                     allTasksDoneCondition.notify_all();
                 }
@@ -110,7 +110,7 @@ void ThreadPool::schedule(const function<void(void)>& thunk)
     {
         unique_lock<std::mutex> lock(queueMutex); // lock the queue (adentro de un scope)
         tasks.emplace(thunk); // encola la funcion
-        cout << "Task enqueued" << endl;
+        // cout << "Task enqueued" << endl;
     }
     tasksSemaphore.signal();
 }
