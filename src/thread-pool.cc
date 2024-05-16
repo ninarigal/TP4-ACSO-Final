@@ -72,7 +72,7 @@ void ThreadPool::dispatcher() // extrae trabajo de la cola, asigna a un worker t
     
 }
 
-ThreadPool::worker(size_t id) // ejecuta la funcion que le asigno el dispatcher (la funcion que se esta encolando)
+void ThreadPool::worker(size_t id) // ejecuta la funcion que le asigno el dispatcher (la funcion que se esta encolando)
 {
     while(!(stop && tasks.empty())) {
         function<void(void)> task;
