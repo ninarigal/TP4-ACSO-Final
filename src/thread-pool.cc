@@ -9,7 +9,7 @@ using namespace std;
 #include "Semaphore.h"
 #include <iostream>
 
-ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), workers(numThreads), tasksSemaphore(0), workersSemaphore(0)
+ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), tasksSemaphore(0), workersSemaphore(0), workers(numThreads)
 {
     activeWorkers = 0;
     stop = false;
