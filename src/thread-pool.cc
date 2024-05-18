@@ -28,78 +28,135 @@ ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), tasksSemaphore(0), 
 }
 
 void ThreadPool::dispatcher() // extrae trabajo de la cola, asigna a un worker trabajo especifico y le entrega la funcion a ejecutar a ese trabajador
+// {
+//     // cout << "Dispatcher waiting" << endl;
+//     while (!stop) {
+//         tasksSemaphore.wait();
+//         // cout << "There is a task" << endl; // si pasa el wait es porque hay una tarea
+//         function<void(void)> task;
+//         {
+//             unique_lock<std::mutex> lock(queueMutex); // lock the queue (adentro de un scope)
+//             // if (tasks.empty()) {
+//             //     if (stop) break; // si tenemos que terminar y no hay tareas, salimos del loop
+//             //     continue;
+//             // }
+//             // if (!tasks.empty()) {
+//             //     task = tasks.front();
+//             //     tasks.pop();
+//             // }
+//             if (stop && tasks.empty()) {
+//                 break;
+//             }
+//             if (!tasks.empty()) {
+//                 // cout << "Dispatcher popped task" << endl;
+//                 task = move(tasks.front());
+//                 tasks.pop();
+//             }
+//         }
+//         if (task) {
+//             workersSemaphore.wait();
+//             for (size_t i = 0; i < wts.size(); i++) {
+//                 unique_lock<std::mutex> lock(queueMutex);
+//                 if (workers[i].busy == false) {
+//                     workers[i].task = task; // le asigno la tarea al worker - ver si hace falta MOVE
+//                     workers[i].busy = true; // el worker esta ocupado
+//                     workers[i].cv.notify_one(); // notifico al worker que tiene una tarea
+//                     activeWorkers++;
+//                     // cout << "Task assigned to worker " << i << endl;
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+//     // cout << "Dispatcher finishing" << endl;
+    
+// }
 {
-    // cout << "Dispatcher waiting" << endl;
-    while (!stop) {
+    while (true) {
         tasksSemaphore.wait();
-        // cout << "There is a task" << endl; // si pasa el wait es porque hay una tarea
+        if (stop && tasks.empty()) { 
+            break;
+        }
+
         function<void(void)> task;
         {
-            unique_lock<std::mutex> lock(queueMutex); // lock the queue (adentro de un scope)
-            // if (tasks.empty()) {
-            //     if (stop) break; // si tenemos que terminar y no hay tareas, salimos del loop
-            //     continue;
-            // }
-            // if (!tasks.empty()) {
-            //     task = tasks.front();
-            //     tasks.pop();
-            // }
-            if (stop && tasks.empty()) {
-                break;
-            }
+            unique_lock<std::mutex> lock(queueMutex);
             if (!tasks.empty()) {
-                // cout << "Dispatcher popped task" << endl;
-                task = move(tasks.front());
+                task = move(tasks.front()); 
                 tasks.pop();
             }
         }
+
         if (task) {
             workersSemaphore.wait();
             for (size_t i = 0; i < wts.size(); i++) {
                 unique_lock<std::mutex> lock(queueMutex);
-                if (workers[i].busy == false) {
-                    workers[i].task = task; // le asigno la tarea al worker - ver si hace falta MOVE
-                    workers[i].busy = true; // el worker esta ocupado
-                    workers[i].cv.notify_one(); // notifico al worker que tiene una tarea
+                if (!workers[i].busy) {
+                    workers[i].task = move(task); 
+                    workers[i].busy = true;
+                    workers[i].cv.notify_one();
                     activeWorkers++;
-                    // cout << "Task assigned to worker " << i << endl;
                     break;
                 }
             }
         }
     }
-    // cout << "Dispatcher finishing" << endl;
-    
 }
 
 void ThreadPool::worker(size_t id) // ejecuta la funcion que le asigno el dispatcher (la funcion que se esta encolando)
+// {
+//     while(!(stop && tasks.empty())) {
+//         function<void(void)> task;
+//         {
+//             unique_lock<std::mutex> lock(queueMutex);
+//             workers[id].cv.wait(lock, [this, id] { return stop || workers[id].busy; });
+//             if (stop) {
+//                 break;
+//             }
+//             task = move(workers[id].task);
+//         }
+//         if (task) {
+//             // cout << "Worker " << id << " got a task" << endl;
+//             workers[id].busy = true;
+//             task();
+//             {
+//                 unique_lock<std::mutex> lock(queueMutex);
+//                 workersSemaphore.signal();
+//                 workers[id].busy = false;
+//                 activeWorkers--;
+//                 // cout << "Worker " << id << " finished task" << endl;
+//                 // cout << "Active workers: " << activeWorkers << endl;
+//                 // cout << "Tasks size: " << tasks.size() << endl;
+//                 if (tasks.empty() && activeWorkers == 0) {
+//                     allTasksDoneCondition.notify_all();
+//                 }
+
+//             }
+//         }
+//     }
+// }
 {
-    while(!(stop && tasks.empty())) {
+    while (true) {
         function<void(void)> task;
         {
             unique_lock<std::mutex> lock(queueMutex);
             workers[id].cv.wait(lock, [this, id] { return stop || workers[id].busy; });
-            if (stop) {
+            if (stop && !workers[id].busy) { // Modificación: Condición de terminación mejorada
                 break;
             }
-            task = move(workers[id].task);
+            task = move(workers[id].task); // Modificación: Usar move
         }
+
         if (task) {
-            // cout << "Worker " << id << " got a task" << endl;
-            workers[id].busy = true;
             task();
             {
                 unique_lock<std::mutex> lock(queueMutex);
                 workersSemaphore.signal();
                 workers[id].busy = false;
                 activeWorkers--;
-                // cout << "Worker " << id << " finished task" << endl;
-                // cout << "Active workers: " << activeWorkers << endl;
-                // cout << "Tasks size: " << tasks.size() << endl;
                 if (tasks.empty() && activeWorkers == 0) {
                     allTasksDoneCondition.notify_all();
                 }
-
             }
         }
     }
