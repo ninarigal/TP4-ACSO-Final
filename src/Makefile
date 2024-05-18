@@ -5,7 +5,7 @@ CXXFLAGS = -std=c++11 -Wall -pthread
 # Build targets
 # TARGET = threadpool
 # TARGET = tptest
-TARGET = tpcistomtest
+TARGET = tpcustomtest
 # SRC = thread-pool.cc main.cc Semaphore.cc
 # SRC = thread-pool.cc tptest.cc Semaphore.cc
 SRC = thread-pool.cc tpcustomtest.cc Semaphore.cc
