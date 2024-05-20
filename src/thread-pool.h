@@ -73,6 +73,7 @@ class ThreadPool {
     std::condition_variable cv;
     std::function<void(void)> task;
     bool busy = false;
+    std::mutex mutex;
   };
   std::vector<Worker> workers;   // worker data
 
