@@ -9,7 +9,7 @@ using namespace std;
 #include "Semaphore.h"
 #include <iostream>
 
-ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), tasksSemaphore(0), workersSemaphore(0), workers(numThreads)
+ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), tasksSemaphore(0), workersSemaphore(numThreads), workers(numThreads)
 {
     activeWorkers = 0;
     stop = false;
@@ -19,7 +19,7 @@ ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), tasksSemaphore(0), 
     for(size_t i = 0; i < numThreads; i++)
     {
         wts[i] = thread([this, i]{worker(i);}); // initialize the worker threads
-        workersSemaphore.signal(); // signal the worker threads
+        // workersSemaphore.signal(); // signal the worker threads
     }
 }
 
