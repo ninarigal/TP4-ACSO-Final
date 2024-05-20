@@ -43,7 +43,8 @@ void ThreadPool::dispatcher()
         if (task) { 
             workersSemaphore.wait(); // wait for a worker to be available
             for (size_t i = 0; i < wts.size(); i++) {
-                unique_lock<std::mutex> lock(queueMutex);
+                // unique_lock<std::mutex> lock(queueMutex);
+                unique_lock<std::mutex> lock(workers[i].mutex);
                 if (!workers[i].busy) {
                     workers[i].task = move(task); // move the task to the worker
                     workers[i].busy = true; // set the worker to busy
@@ -61,7 +62,8 @@ void ThreadPool::worker(size_t id)
     while (true) {
         function<void(void)> task;
         {
-            unique_lock<std::mutex> lock(queueMutex);
+            // unique_lock<std::mutex> lock(queueMutex);
+            unique_lock<std::mutex> lock(workers[id].mutex);
             workers[id].cv.wait(lock, [this, id] { return stop || workers[id].busy; }); // wait for a task to be available
             if (stop && !workers[id].busy) { 
                 break;
@@ -72,13 +74,21 @@ void ThreadPool::worker(size_t id)
         if (task) {
             task();
             {
-                unique_lock<std::mutex> lock(queueMutex);
+                // unique_lock<std::mutex> lock(queueMutex);
+                unique_lock<std::mutex> lock(workers[id].mutex);
                 workersSemaphore.signal(); 
                 workers[id].busy = false; // set the worker to not busy
-                activeWorkers--;
-                if (tasks.empty() && activeWorkers == 0) {
-                    allTasksDoneCondition.notify_all(); // notify all threads that all tasks are done
+                {
+                    unique_lock<std::mutex> lock(queueMutex);
+                    activeWorkers--;
+                    if (tasks.empty() && activeWorkers == 0) {
+                        allTasksDoneCondition.notify_all(); // notify all threads that all tasks are done
+                    }
                 }
+                // activeWorkers--;
+                // if (tasks.empty() && activeWorkers == 0) {
+                //     allTasksDoneCondition.notify_all(); // notify all threads that all tasks are done
+                // }
             }
         }
     }
