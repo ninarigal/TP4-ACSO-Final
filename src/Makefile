@@ -3,12 +3,12 @@ CXX = g++
 CXXFLAGS = -std=c++11 -Wall -pthread
 
 # Build targets
-TARGET = threadpool
+# TARGET = threadpool
 # TARGET = tptest
-# TARGET = tpcustomtest
-SRC = thread-pool.cc main.cc Semaphore.cc
+TARGET = tpcustomtest
+# SRC = thread-pool.cc main.cc Semaphore.cc
 # SRC = thread-pool.cc tptest.cc Semaphore.cc
-# SRC = thread-pool.cc tpcustomtest.cc Semaphore.cc
+SRC = thread-pool.cc tpcustomtest.cc Semaphore.cc
 
 
 # Link the target with object files
