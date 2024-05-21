@@ -7,7 +7,6 @@
 #include "thread-pool.h"
 using namespace std;
 #include "Semaphore.h"
-#include <iostream>
 
 ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), tasksSemaphore(0), workersSemaphore(numThreads), workers(numThreads)
 {
