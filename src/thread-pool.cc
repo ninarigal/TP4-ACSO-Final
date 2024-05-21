@@ -48,11 +48,11 @@ void ThreadPool::dispatcher()
             }
         }
     }
-    // for (size_t i = 0; i < wts.size(); i++) { // notify all workers to stop
-    //     unique_lock<mutex> lock(workers[i].mutex);
-    //     workers[i].busy = true;
-    //     workers[i].cv.notify_one();
-    // }
+    for (size_t i = 0; i < wts.size(); i++) { // notify all workers to stop
+        unique_lock<mutex> lock(workers[i].mutex);
+        workers[i].busy = true;
+        workers[i].cv.notify_one();
+    }
 }
 
 void ThreadPool::worker(size_t id)
