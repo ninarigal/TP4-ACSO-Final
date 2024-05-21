@@ -48,11 +48,11 @@ void ThreadPool::dispatcher()
             }
         }
     }
-    for (size_t i = 0; i < wts.size(); i++) { // notify all workers to stop
-        unique_lock<mutex> lock(workers[i].mutex);
-        workers[i].busy = true;
-        workers[i].cv.notify_one();
-    }
+    // for (size_t i = 0; i < wts.size(); i++) { // notify all workers to stop when the dispatcher thread stops
+    //     unique_lock<mutex> lock(workers[i].mutex); 
+    //     workers[i].busy = true;  
+    //     workers[i].cv.notify_one(); 
+    // }
 }
 
 void ThreadPool::worker(size_t id)
@@ -102,6 +102,7 @@ void ThreadPool::wait()
 
 ThreadPool::~ThreadPool() 
 {
+    wait(); // wait for all tasks to be done
     {
         unique_lock<std::mutex> lock(queueMutex);
         stop = true; // set the stop flag to true
