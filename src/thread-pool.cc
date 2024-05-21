@@ -13,53 +13,17 @@ ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), tasksSemaphore(0), 
 {
     activeWorkers = 0;
     stop = false;
-
     dt = thread([this]{dispatcher();}); // initialize the dispatcher thread
-
     for(size_t i = 0; i < numThreads; i++)
     {
         wts[i] = thread([this, i]{worker(i);}); // initialize the worker threads
-        // workersSemaphore.signal(); // signal the worker threads
     }
 }
 
 void ThreadPool::dispatcher()
-// {
-//     while (true) {
-//         tasksSemaphore.wait(); // wait for a task to be available
-//         if (stop && tasks.empty()) { 
-//             break;
-//         }
-
-//         function<void(void)> task; 
-//         {
-//             unique_lock<std::mutex> lock(queueMutex);
-//             if (!tasks.empty()) {
-//                 task = move(tasks.front()); 
-//                 tasks.pop();
-//             }
-//         }
-
-//         if (task) { 
-//             workersSemaphore.wait(); // wait for a worker to be available
-//             for (size_t i = 0; i < wts.size(); i++) {
-//                 // unique_lock<std::mutex> lock(queueMutex);
-//                 unique_lock<std::mutex> lock(workers[i].mutex);
-//                 if (!workers[i].busy) {
-//                     workers[i].task = move(task); // move the task to the worker
-//                     workers[i].busy = true; // set the worker to busy
-//                     workers[i].cv.notify_one(); // notify the worker
-//                     activeWorkers++;
-//                     break;
-//                 }
-//             }
-//         }
-//     }
-// }
 {
     while (true) {
         tasksSemaphore.wait(); // wait for a task to be available
-
         function<void(void)> task; 
         {
             unique_lock<mutex> lock(queueMutex);
@@ -70,7 +34,6 @@ void ThreadPool::dispatcher()
                 break;
             }
         }
-
         if (task) {
             workersSemaphore.wait(); // wait for a worker to be available
             for (size_t i = 0; i < wts.size(); i++) {
@@ -85,8 +48,7 @@ void ThreadPool::dispatcher()
             }
         }
     }
-    // notify all workers to stop
-    for (size_t i = 0; i < wts.size(); i++) {
+    for (size_t i = 0; i < wts.size(); i++) { // notify all workers to stop
         unique_lock<mutex> lock(workers[i].mutex);
         workers[i].busy = true;
         workers[i].cv.notify_one();
@@ -94,41 +56,6 @@ void ThreadPool::dispatcher()
 }
 
 void ThreadPool::worker(size_t id)
-// {
-//     while (true) {
-//         function<void(void)> task;
-//         {
-//             // unique_lock<std::mutex> lock(queueMutex);
-//             unique_lock<std::mutex> lock(workers[id].mutex);
-//             workers[id].cv.wait(lock, [this, id] { return stop || workers[id].busy; }); // wait for a task to be available
-//             if (stop && !workers[id].busy) { 
-//                 break;
-//             }
-//             task = move(workers[id].task); 
-//         }
-
-//         if (task) {
-//             task();
-//             {
-//                 // unique_lock<std::mutex> lock(queueMutex);
-//                 unique_lock<std::mutex> lock(workers[id].mutex);
-//                 workersSemaphore.signal(); 
-//                 workers[id].busy = false; // set the worker to not busy
-//                 {
-//                     unique_lock<std::mutex> lock(queueMutex);
-//                     activeWorkers--;
-//                     if (tasks.empty() && activeWorkers == 0) {
-//                         allTasksDoneCondition.notify_all(); // notify all threads that all tasks are done
-//                     }
-//                 }
-//                 // activeWorkers--;
-//                 // if (tasks.empty() && activeWorkers == 0) {
-//                 //     allTasksDoneCondition.notify_all(); // notify all threads that all tasks are done
-//                 // }
-//             }
-//         }
-//     }
-// }
 {
     while (true) {
         function<void(void)> task;
@@ -141,7 +68,6 @@ void ThreadPool::worker(size_t id)
             task = move(workers[id].task);
             workers[id].busy = false;
         }
-
         if (task) {
             task();
             {
@@ -189,12 +115,7 @@ ThreadPool::~ThreadPool()
             workers[i].cv.notify_one(); // notify all worker threads to stop
         }
         wts[i].join(); // join all worker threads
-        // workers[i].cv.notify_one(); // notify all worker threads to stop
     }
-    // dt.join(); // join the dispatcher thread
-    // for (size_t i = 0; i < wts.size(); i++) {
-    //     wts[i].join(); // join all worker threads
-    // }
 }
 
        

@@ -54,39 +54,20 @@ class ThreadPool {
   
   void dispatcher();             // dispatcher function
   void worker(size_t id);        // worker function
-
   std::queue<std::function<void(void)>> tasks;  // tasks queue (funciones a ejecutar)
   Semaphore tasksSemaphore;      // semaphore for tasks queue 
   std::mutex queueMutex;         // mutex for tasks queue
   std::condition_variable allTasksDoneCondition;  // condition variable for all tasks done
-
   bool stop;                     // flag to stop worker threads
-
   Semaphore workersSemaphore;    // semaphore for workers
   size_t activeWorkers;          // number of active workers
-
-  // std::condition_variable allTasksDoneCondition;  // condition variable for all tasks done
-  // bool allWorkersIdle();         // check if all worker threads are idle
-  // size_t workerID = 0;
-
   struct Worker {
-    std::condition_variable cv;
-    std::function<void(void)> task;
-    bool busy = false;
-    std::mutex mutex;
+    std::condition_variable cv; // condition variable for worker
+    std::function<void(void)> task; // task to execute
+    bool busy = false; // flag to indicate if worker is busy
+    std::mutex mutex; // mutex for worker
   };
   std::vector<Worker> workers;   // worker data
-
-
-  // bool allWorkersIdle() {
-  //   for (size_t i = 0; i < wts.size(); i++) {
-  //     if (wts[i].joinable()) return false;
-  //   }
-  //   return true;
-  // }
-
-  
-
 
 /**
  * ThreadPools are the type of thing that shouldn't be cloneable, since it's
